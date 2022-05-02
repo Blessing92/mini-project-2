@@ -10,6 +10,8 @@ from utilities import make_the_connections
 
 
 global message
+global initial_nb_of_generals
+global last_used_port
 message = []
 sockets = []
 used_ports = []
@@ -92,12 +94,19 @@ def start(args):
     port = 10001
     number_of_processes = int(args)
 
+    global initial_nb_of_generals
+    initial_nb_of_generals = int(args)
+
     for node_id in range(number_of_processes):
         node = MyTestNode(host="127.0.0.1", port=port, id="G" + str(node_id+1))
         used_ports.append(port)
         port += 1
         node.start()
         sockets.append(node)
+    
+    # Set the last occupied port
+    global last_used_port
+    last_used_port = port
 
     # Node 1 connect to other nodes
     make_the_connections(sockets)
@@ -151,8 +160,18 @@ def start(args):
                 if not cmd[1].isnumeric():
                     print(cmd[1], " is not a valid integer")
                 else:
+                    print("Please wait ....")
                     kill_general(cmd[1])
 
+        # $ g-add K, where K is the number of new generals. By default, generals have a non-faulty state once created
+        elif command == "g-add":
+            if len(cmd) != 2:
+                print("Usage: g-add <number>")
+            else:
+                if not cmd[1].isnumeric():
+                    print(cmd[1], " is not a valid integer")
+                else:
+                    add_general(int(cmd[1]))
 
         elif command == 'exit':
             for node in sockets:
@@ -193,6 +212,30 @@ def kill_general(general_id):
                 for node in sockets:
                     if node.id == 'G'+str(int(general_id)+1):
                         node.election_status = Election.primary
+
+
+# $ g-add K, where K is the number of new generals. By default, generals have a non-faulty state once created
+def add_general(number):
+    global last_used_port, initial_nb_of_generals
+    new_port = last_used_port+1
+    value = number + initial_nb_of_generals
+
+    for node_id in range(number):
+        node = MyTestNode(host="127.0.0.1", port=new_port, id="G" + str(value))
+        used_ports.append(new_port)
+        new_port += 1
+        value -= 1
+        node.start()
+        sockets.append(node)
+
+    # Node 1 connect to other nodes
+    make_the_connections(sockets)
+
+    # update the last used port
+    last_used_port = new_port
+
+    # update the initial number generals
+    initial_nb_of_generals = len(sockets)
             
 
 
@@ -211,8 +254,6 @@ def is_good_entry(cmd) -> bool:
 def get_usage():
     print("Usage: python Generals_Byzantine_program.py <number of processes>")
     sys.exit(1)
-
-
 
 
 
