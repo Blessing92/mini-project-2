@@ -52,3 +52,8 @@ def count_generals(sockets):
     required_generals = (3 * fautly_counter) + 1
     return required_generals, fautly_counter
 
+
+def get_sender(sockets):
+    for node in sockets:
+        if node.election_status.name == "primary":
+            return node

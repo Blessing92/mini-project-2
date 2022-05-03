@@ -1,3 +1,4 @@
+from socket import socket
 import sys
 import time
 import threading
@@ -6,7 +7,7 @@ import random
 
 from node import Node
 from state import State, Election
-from utilities import make_the_connections, count_generals
+from utilities import make_the_connections, count_generals, get_sender
 
 
 global message
@@ -23,15 +24,12 @@ resources = False
 class MyTestNode (Node):
     def __init__(self, host, port, id):
         self.ownMessage = []
-        self.logical_time = 5 + time.process_time()
         self.timestamp = 0
-        self.time_to_hold_cs = 10
         self.state = State.NF
         self.majority = ""
         self.election_status = Election.secondary
         self.local_count = 0
         self.queues = []
-        self.sent_to_all = False
 
         super(MyTestNode, self).__init__(host, port, id)
         global message
@@ -56,15 +54,36 @@ class MyTestNode (Node):
     def node_message(self, node, data):
         global message
 
-        self.ownMessage.append(self.id + " node_message from " + node.id + ": " + str(data) + " port: " + str(node.port))
-        # TO DO
-        # Send with except (don't send to a particular node)
-        # Check weither the node state is Faulty or Non-Faulty
-        if self.state.name == 'NF':
-            self.majority = str(data.split(",")[0])
-            pass
-        else: 
-            self.majority = random.choice(actions)
+        # When we receive data from the primary with new action, we reset our local storage
+        get_received = str(data.split(",")[2])
+        received_from = get_received.strip()
+
+        if received_from == "primary":
+            self.ownMessage = []
+            
+            if self.state.name == 'NF':
+                action = str(data.split(",")[0])
+                self.ownMessage.append((action, node.id))
+              
+                # Send the new action to other generals except the "Primary General"
+                forward_action = action + ", from, " + str(self.id)
+                self.send_to_nodes(forward_action, exclude=[node])
+                time.sleep(2)
+            else:
+                action = str(data.split(",")[0])
+                random_action = random.choice(actions)
+                self.ownMessage.append((action, node.id))
+
+                # Send the new action to other generals except the "Primary General"
+                forward_action = random_action + ", from, " + str(self.id)
+                self.send_to_nodes(forward_action, exclude=[node])
+                time.sleep(2)
+
+        else:
+            action = str(data.split(",")[0])
+            self.ownMessage.append((action, node.id))
+              
+          
  
 
     def node_disconnect_with_outbound_node(self, node):
@@ -221,7 +240,7 @@ def add_general(number):
     initial_nb_of_generals = len(sockets)
 
 
-# Primery general mamaning the the attack
+# Primery general managing the the attack
 def byzantine_action(action):
     # Calculate the number of generals required to take actions
     required_generals, fautly_counter = count_generals(sockets)
@@ -233,7 +252,7 @@ def byzantine_action(action):
                 if len(sockets) < required_generals:
                     pass
                 else:
-                    node.send_to_nodes(action + ", from " + node.id )
+                    node.send_to_nodes(action + ", from, primary")
                     time.sleep(2)
             else:
                 random_action = random.choice(actions) 
@@ -241,7 +260,7 @@ def byzantine_action(action):
                 if len(sockets) < required_generals:
                     pass
                 else: 
-                    node.send_to_nodes(random_action + ", from " + node.id )
+                    node.send_to_nodes(random_action + ", from, primary")
                     time.sleep(2)
 
 
@@ -261,7 +280,8 @@ def actual_order():
 
     else:
         for node in sorted(sockets, key=lambda node: node.id):
-            print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
+            print(str(node.id), ": ", node.ownMessage )
+            # print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
         print("Execute order: ....")
 
             
