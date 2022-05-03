@@ -6,7 +6,7 @@ import random
 
 from node import Node
 from state import State, Election
-from utilities import make_the_connections
+from utilities import make_the_connections, count_generals
 
 
 global message
@@ -16,6 +16,7 @@ message = []
 sockets = []
 used_ports = []
 all_threads = []
+actions = ['attack', 'retreat']
 resources = False
 
 
@@ -54,11 +55,17 @@ class MyTestNode (Node):
 
     def node_message(self, node, data):
         global message
-        num_node = len(sockets) - 1
-        self.ownMessage.append(self.id + " node_message from " +
-                               node.id + ": " + str(data) + " port: " + str(node.port))
 
-          
+        self.ownMessage.append(self.id + " node_message from " + node.id + ": " + str(data) + " port: " + str(node.port))
+        # TO DO
+        # Send with except (don't send to a particular node)
+        # Check weither the node state is Faulty or Non-Faulty
+        if self.state.name == 'NF':
+            self.majority = str(data.split(",")[0])
+            pass
+        else: 
+            self.majority = random.choice(actions)
+ 
 
     def node_disconnect_with_outbound_node(self, node):
         global message
@@ -68,25 +75,6 @@ class MyTestNode (Node):
     def node_request_to_stop(self):
         global message
         message.append("node is requested to stop!")
-
-
-# def tick(running, node):
-#     while running:
-#         if not node.sent_to_all:
-#             time.sleep(node.logical_time)
-#             node.state = State.WANTED
-#             my_id = node.id
-#             send_time = time.process_time()
-#             new_msg = "resource" + "," + node.id + "," + str(send_time)
-
-#             # Send messages to other nodes for accessing the critical section
-#             for node in sockets:
-#                 if node.id == my_id:
-#                     node.send_to_nodes(new_msg)
-#                     node.timestamp = send_time
-#                     time.sleep(5)
-#                     node.sent_to_all = True
-#                     running = False
 
  
 def start(args):
@@ -132,9 +120,8 @@ def start(args):
         if command == 'actual-order':
             is_good = is_good_entry(cmd)
             if is_good:
-                actual_order(cmd[1])
-                for node in sorted(sockets, key=lambda node: node.id):
-                    print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
+                byzantine_action(str(cmd[1]))
+                actual_order()
         
         # g-state ID “State”, where ID is the general ID and state is either “Faulty” or “Non-faulty”. For instance,
         elif command == 'g-state':
@@ -182,10 +169,6 @@ def start(args):
         else:
             print("Invalid command! Please try again...")
 
-
-def actual_order(action):
-    for node in sorted(sockets, key=lambda node: node.id):
-        node.majority = str(action)
 
 # g-state ID “State”, where ID is the general ID and state is either “Faulty” or “Non-faulty”. For instance,
 def change_state(id_number, state):
@@ -236,9 +219,53 @@ def add_general(number):
 
     # update the initial number generals
     initial_nb_of_generals = len(sockets)
+
+
+# Primery general mamaning the the attack
+def byzantine_action(action):
+    # Calculate the number of generals required to take actions
+    required_generals, fautly_counter = count_generals(sockets)
+
+    for node in sockets:
+        if node.election_status.name == "primary":
+            if node.state.name == "NF":
+                node.majority = str(action)
+                if len(sockets) < required_generals:
+                    pass
+                else:
+                    node.send_to_nodes(action + ", from " + node.id )
+                    time.sleep(2)
+            else:
+                random_action = random.choice(actions) 
+                node.majority = random_action
+                if len(sockets) < required_generals:
+                    pass
+                else: 
+                    node.send_to_nodes(random_action + ", from " + node.id )
+                    time.sleep(2)
+
+
+# actual order of execution
+# Execute order: cannot be determined – not enough generals in the system! 1 faulty node in the system -
+# 2 out of 3 quorum not consistent
+def actual_order():
+    
+    # Calculate the number of generals required to take actions
+    required_generals, fautly_counter = count_generals(sockets)
+
+    if len(sockets) < required_generals:
+        for node in sorted(sockets, key=lambda node: node.id):
+            print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
+        print("Execute order: cannot be determined – not enough generals in the system! " + 
+        str(fautly_counter), " faulty node in the system " + "... quorum")
+
+    else:
+        for node in sorted(sockets, key=lambda node: node.id):
+            print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
+        print("Execute order: ....")
+
             
-
-
+            
 def is_good_entry(cmd) -> bool:
     if len(cmd) < 2:
         print("Usage: actual-order <'attack' or 'retreat'>")

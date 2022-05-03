@@ -39,3 +39,16 @@ def make_the_connections(sockets):
                     time.sleep(2)
                     check.append(str(node_i) + "," + str(node_j))
 
+
+
+def count_generals(sockets):
+    fautly_counter = 0
+
+    for node in sockets:
+        if node.state.name == "F":
+            fautly_counter += 1
+    
+    # Calculate the number of generals required to take actions
+    required_generals = (3 * fautly_counter) + 1
+    return required_generals, fautly_counter
+
