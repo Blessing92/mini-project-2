@@ -250,16 +250,20 @@ def byzantine_action(action):
             if node.state.name == "NF":
                 node.majority = str(action)
                 if len(sockets) < required_generals:
-                    pass
+                    node.ownMessage.append((action, node.id))
                 else:
+                    # Primary stores the action sent to the generals
+                    node.ownMessage.append((action, node.id))
                     node.send_to_nodes(action + ", from, primary")
                     time.sleep(2)
             else:
                 random_action = random.choice(actions) 
                 node.majority = random_action
                 if len(sockets) < required_generals:
-                    pass
-                else: 
+                    node.ownMessage.append((action, node.id))
+                else:
+                    # Primary stores the action sent to the generals
+                    node.ownMessage.append((action, node.id)) 
                     node.send_to_nodes(random_action + ", from, primary")
                     time.sleep(2)
 
@@ -274,9 +278,16 @@ def actual_order():
 
     if len(sockets) < required_generals:
         for node in sorted(sockets, key=lambda node: node.id):
+            if node.election_status.name == "primary":
+                print("Primary action: ", node.ownMessage)
+                node.majority = node.ownMessage[0][0]
+            else:
+                node.majority = 'undefined'
+        
+        for node in sorted(sockets, key=lambda node: node.id):
             print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
         print("Execute order: cannot be determined – not enough generals in the system! " + 
-        str(fautly_counter), " faulty node in the system " + "... quorum")
+        str(fautly_counter), " faulty node in the system " + str(len(sockets) - 1) + " out of " + str(len(sockets)) + "  quorum not consistent")
 
     else:
         for node in sorted(sockets, key=lambda node: node.id):
