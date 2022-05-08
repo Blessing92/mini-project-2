@@ -236,19 +236,37 @@ def actual_order():
         
         # The primary decide based on the quorum the votes of the generals
         if count_attacks > count_retreats:
-            for node in sorted(sockets, key=lambda node: node.id):
-                node.majority = "attack"
+            if fautly_counter == 0:
+                for node in sorted(sockets, key=lambda node: node.id):
+                    node.majority = "attack"
+                for node in sorted(sockets, key=lambda node: node.id):
+                    print(str(node.id) + ", " + str(node.election_status.name) + ", state=" + str(node.state.name))
+
+                print("Execute order: " + node.majority + "! " + " Non-faulty nodes in the system - " + str(count_attacks) + " out of " + str(len(sockets)) + " quorum suggest " + node.majority)
+            else:
+                for node in sorted(sockets, key=lambda node: node.id):
+                    node.majority = "attack"
+                for node in sorted(sockets, key=lambda node: node.id):
+                    print(str(node.id) + ", " + str(node.election_status.name) + ", state=" + str(node.state.name))
+
+                print("Execute order: " + node.majority + "! " + str(fautly_counter) + " faulty node in the system - " + str(count_attacks) + " out of " + str(len(sockets)) + " quorum suggest " + node.majority)
         else:
-            for node in sorted(sockets, key=lambda node: node.id):
-                node.majority = "retreat"
+            if fautly_counter == 0:
+                for node in sorted(sockets, key=lambda node: node.id):
+                    node.majority = "retreat"
+                for node in sorted(sockets, key=lambda node: node.id):
+                    print(str(node.id) + ", " + str(node.election_status.name) + ", state=" + str(node.state.name))
 
-        for node in sorted(sockets, key=lambda node: node.id):
-            print(str(node.id), ": ", node.ownMessage )
-                # print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
-        print("Execute order: ....")
+                print("Execute order: " + node.majority + "! " + "Non-faulty node in the system - " + str(count_retreats) + " out of " + str(len(sockets)) + " quorum suggest " + node.majority)
+            else:
+                for node in sorted(sockets, key=lambda node: node.id):
+                    node.majority = "retreat"
+                for node in sorted(sockets, key=lambda node: node.id):
+                    print(str(node.id) + ", " + str(node.election_status.name) + ", state=" + str(node.state.name))
 
-            
-            
+                print("Execute order: " + node.majority + "! " + str(fautly_counter) + " faulty node in the system - " + str(count_retreats) + " out of " + str(len(sockets)) + " quorum suggest " + node.majority)
+
+
 def is_good_entry(cmd) -> bool:
     if len(cmd) < 2:
         print("Usage: actual-order <'attack' or 'retreat'>")
