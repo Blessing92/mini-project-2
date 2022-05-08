@@ -265,10 +265,16 @@ def get_usage():
     print("Usage: python Generals_Byzantine_program.py <number of processes>")
     sys.exit(1)
 
+def get_usage_2():
+    print("Usage: number of generals must be greater than zero")
+    sys.exit(1)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         get_usage()
     else:
-        start(sys.argv[1])
+        if int(sys.argv[1]) <= 0:
+            get_usage_2()
+        else:
+            start(sys.argv[1])
