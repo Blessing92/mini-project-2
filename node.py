@@ -14,6 +14,9 @@ Python package p2pnet for implementing decentralized peer-to-peer network applic
 TODO: Also create events when things go wrong, like a connection with a node has failed.
 """
 
+actions = ['attack', 'retreat']
+
+
 class Node(threading.Thread):
     """Implements a node that is able to connect to other nodes and is able to accept connections from other nodes.
     After instantiation, the node creates a TCP/IP server with the given port.
@@ -110,23 +113,55 @@ class Node(threading.Thread):
         print("Node connection overview:")
         print("- Total nodes connected with us: %d" % len(self.nodes_inbound))
         print("- Total nodes connected to     : %d" % len(self.nodes_outbound))
-
+    
     def send_to_nodes(self, data, exclude=[]):
         """ Send a message to all the nodes that are connected with this node. data is a python variable which is
             converted to JSON that is send over to the other node. exclude list gives all the nodes to which this
             data should not be sent."""
-        self.message_count_send = self.message_count_send + 1
-        for n in self.nodes_inbound:
-            if n in exclude:
-                self.debug_print("Node send_to_nodes: Excluding node in sending the message")
-            else:
-                self.send_to_node(n, data)
 
-        for n in self.nodes_outbound:
-            if n in exclude:
-                self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+        if self.election_status.name == "primary":
+            if self.state.name == 'F':
+                self.message_count_send = self.message_count_send + 1
+                for n in self.nodes_inbound:
+                    random_action_in = random.choice(actions)
+                    if n in exclude:
+                        self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+                    else:
+                        self.send_to_node(n, random_action_in + ", from, primary")
+
+                for n in self.nodes_outbound:
+                    random_action_out = random.choice(actions)
+                    if n in exclude:
+                        self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+                    else:
+                        self.send_to_node(n, random_action_out + ", from, primary")
             else:
-                self.send_to_node(n, data)
+                self.message_count_send = self.message_count_send + 1
+                for n in self.nodes_inbound:
+                    if n in exclude:
+                        self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+                    else:
+                        self.send_to_node(n, data)
+
+                for n in self.nodes_outbound:
+                    if n in exclude:
+                        self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+                    else:
+                        self.send_to_node(n, data)
+        else:
+            self.message_count_send = self.message_count_send + 1
+            for n in self.nodes_inbound:
+                if n in exclude:
+                    self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+                else:
+                    self.send_to_node(n, data)
+
+            for n in self.nodes_outbound:
+                if n in exclude:
+                    self.debug_print("Node send_to_nodes: Excluding node in sending the message")
+                else:
+                    self.send_to_node(n, data)
+
 
     def send_to_node(self, n, data):
         """ Send the data to the node n if it exists."""
