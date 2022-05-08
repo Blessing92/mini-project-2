@@ -19,6 +19,9 @@ used_ports = []
 all_threads = []
 actions = ['attack', 'retreat']
 resources = False
+count_attacks = 0
+count_retreats = 0
+
 
 
 class MyTestNode (Node):
@@ -211,9 +214,10 @@ def kill_general(general_id):
             node.stop()
             sockets.remove(node)
             if node.election_status.name == 'primary':
-                for node in sockets:
-                    if node.id == 'G'+str(int(general_id)+1):
-                        node.election_status = Election.primary
+                # Sort the nodes in order to elect the new Primary General
+                nodes_sorted = sorted(sockets, key=lambda node: node.id)
+                new_leader = nodes_sorted[0]
+                new_leader.election_status = Election.primary
 
 
 # $ g-add K, where K is the number of new generals. By default, generals have a non-faulty state once created
@@ -279,7 +283,6 @@ def actual_order():
     if len(sockets) < required_generals:
         for node in sorted(sockets, key=lambda node: node.id):
             if node.election_status.name == "primary":
-                print("Primary action: ", node.ownMessage)
                 node.majority = node.ownMessage[0][0]
             else:
                 node.majority = 'undefined'
@@ -291,6 +294,31 @@ def actual_order():
 
     else:
         for node in sorted(sockets, key=lambda node: node.id):
+            if node.election_status.name != "primary":
+                attacks = 0
+                retreats = 0
+                for action in node.ownMessage:
+                    if action[0] == "attack":
+                        attacks += 1
+                    else:
+                        retreats += 1
+                # Each node decide based on the action received 
+                if attacks > retreats:
+                    count_attacks += 1
+                elif retreats > attacks:
+                    count_retreats += 1
+                else:
+                    pass
+        
+        # The primary decide based on the quorum the votes of the generals
+        if count_attacks > count_retreats:
+            for node in sorted(sockets, key=lambda node: node.id):
+                node.majority = "attack"
+        else:
+            for node in sorted(sockets, key=lambda node: node.id):
+                node.majority = "retreat"
+
+
             print(str(node.id), ": ", node.ownMessage )
             # print(str(node.id) + ", " + str(node.election_status.name) + ", majority=" + str(node.majority) + ", state=" + str(node.state.name))
         print("Execute order: ....")
