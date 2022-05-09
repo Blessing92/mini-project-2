@@ -8,10 +8,10 @@
 
 https://youtu.be/_5E4h7HO6jc
 
-Sorry, the video is a bit longer then required but this was need in order to complete all the commands.
+Sorry, the video is a bit longer then required but this was needed in order to complete all the commands.
 
 ## How to run the program
-Run ```python3 Generals_Byzantine_program.py <number of generals>```
+```python3 Generals_Byzantine_program.py <number of generals>```
 
 ## Commands
 
@@ -30,7 +30,7 @@ As explained in the Appendix, it is required at least 3k+1 members to reach cons
 
 <img src="./problem.png" alt="consensus" title="3k+1">
 
-This problem is shown on the video from 1:50-2:30
+These cases are shown on the video from 1:50-2:30
 
 
 ## Working method
