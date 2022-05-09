@@ -30,7 +30,7 @@ As explained in the Appendix, it is required at least 3k+1 members to reach cons
 
 <img src="./problem.png" alt="consensus" title="3k+1">
 
-These cases are shown on the video from 1:50-2:30
+These cases are shown in the video between 1:50-2:30 minutes
 
 
 ## Working method
