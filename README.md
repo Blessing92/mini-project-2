@@ -22,10 +22,13 @@ In the case of only 2 secondary nodes, our programm still applies the 3N+1 rule.
 
 ## Working method
 We used the following working method:
-- Percé worled on the programm in python
+- Perseverance worled on the programm in python
 - Emmanuel worked on the programm in java
+
+
 In the end, we choose the python version as it was complete and worked.
-Emmanuel had a hard time in java working with the sockets, which is why we used the python version in the end, and the reason why Percé mostly commited in this repository.
+Emmanuel had a hard time in java working with the sockets, which is why we used the python version in the end.
+We worked together on Perseverance computer at Delta.
 
 
 <p align="center">Made with ❤ by Perseverance Ngoy and Emmanuel Cousin</p>
